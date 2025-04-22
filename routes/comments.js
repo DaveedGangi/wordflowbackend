@@ -4,19 +4,19 @@ const auth = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/", auth, async (req, res) => {
+router.post("/comments", auth, async (req, res) => {
   const { content, postId } = req.body;
   const comment = new Comment({ content, post: postId, author: req.user.userId });
   await comment.save();
   res.status(201).json(comment);
 });
 
-router.get("/post/:postId", async (req, res) => {
+router.get("/comments/:postId", async (req, res) => {
   const comments = await Comment.find({ post: req.params.postId }).populate("author", "username").sort({created_at:-1});
   res.json(comments);
 });
 
-router.put("/:commentId",auth,async(req,res)=>{
+router.put("/comments/:commentId",auth,async(req,res)=>{
 
   try{
   const {content}=req.body;
@@ -42,7 +42,7 @@ router.put("/:commentId",auth,async(req,res)=>{
 })
 
 
-router.delete("/:commentId",auth,async(req,res)=>{
+router.delete("/comments/:commentId",auth,async(req,res)=>{
 
   try{
   const{commentId}=req.params 

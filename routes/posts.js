@@ -12,7 +12,7 @@ const fileUpload = upload.fields([
 
 const router = express.Router();
 
-router.post("/", auth,fileUpload, async (req, res) => {
+router.post("/posts", auth,fileUpload, async (req, res) => {
   const { title, content,  status } = req.body;
 
   const file = req.file;
@@ -35,19 +35,19 @@ router.post("/", auth,fileUpload, async (req, res) => {
   res.status(201).json(post);
 });
 
-router.get("/", async (req, res) => {
+router.get("/posts", async (req, res) => {
   const posts = await Post.find().populate("author", "username");
   res.json(posts);
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/posts/:id", async (req, res) => {
   const post = await Post.findById(req.params.id).populate("author", "username");
   res.json(post);
 });
 
 
 
-router.put("/:id", auth, fileUpload, async (req, res) => {
+router.put("/posts/:id", auth, fileUpload, async (req, res) => {
     try {
       const post = await Post.findById(req.params.id);
       if (!post) return res.status(404).json({ error: "Post not found" });
@@ -91,7 +91,7 @@ router.put("/:id", auth, fileUpload, async (req, res) => {
 
   
 
-router.delete("/:id", auth, async (req, res) => {
+router.delete("/posts/:id", auth, async (req, res) => {
   const post = await Post.findById(req.params.id);
   if (post.author.toString() !== req.user.userId) {
     return res.status(403).json({ error: "Unauthorized" });
