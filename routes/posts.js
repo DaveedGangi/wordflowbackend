@@ -2,8 +2,14 @@ const express = require("express");
 const Post = require("../models/Post");
 const auth = require("../middleware/authMiddleware");
 
+const uploadToCloud=require("../utils/uploadToCloud");
+
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/' });
+// const upload = multer({ dest: 'uploads/' });
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
 
 const fileUpload = upload.fields([
   { name: 'image', maxCount: 1 },
@@ -12,10 +18,13 @@ const fileUpload = upload.fields([
 
 const router = express.Router();
 
-router.post("/posts", auth,fileUpload, async (req, res) => {
+
+//add a post 
+
+router.post("/", auth,fileUpload, async (req, res) => {
   const { title, content,  status } = req.body;
 
-  const file = req.file;
+
 
   const imageFile = req.files?.image?.[0];
   const videoFile = req.files?.video?.[0];
@@ -35,19 +44,32 @@ router.post("/posts", auth,fileUpload, async (req, res) => {
   res.status(201).json(post);
 });
 
-router.get("/posts", async (req, res) => {
+
+// get all posts 
+router.get("/", async (req, res) => {
   const posts = await Post.find().populate("author", "username");
   res.json(posts);
 });
 
-router.get("/posts/:id", async (req, res) => {
-  const post = await Post.findById(req.params.id).populate("author", "username");
+
+
+//get user posts
+router.get("/user",auth,async(req,res)=>{
+  const posts=await Post.find({author:req.user.userId}).populate("author","username");
+  res.json(posts);
+})
+
+// get particular post 
+router.get("/:postId",auth,async(req,res)=>{
+  const{postId}=req.params
+  const post=await Post.findById(postId).populate("author","username");
   res.json(post);
-});
+})
 
 
 
-router.put("/posts/:id", auth, fileUpload, async (req, res) => {
+// update post 
+router.put("/:id", auth, fileUpload, async (req, res) => {
     try {
       const post = await Post.findById(req.params.id);
       if (!post) return res.status(404).json({ error: "Post not found" });
@@ -65,7 +87,8 @@ router.put("/posts/:id", auth, fileUpload, async (req, res) => {
   const imageFile = req.files?.image?.[0];
   const videoFile = req.files?.video?.[0];
 
-  let mediaUrl = null;
+  let mediaUrl = post.media;
+  post.mediaType=post.mediaType;
 
   if (imageFile) {
     mediaUrl = await uploadToCloud(imageFile, 'image');
@@ -89,9 +112,9 @@ router.put("/posts/:id", auth, fileUpload, async (req, res) => {
 
   
 
-  
+// delete post 
 
-router.delete("/posts/:id", auth, async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   const post = await Post.findById(req.params.id);
   if (post.author.toString() !== req.user.userId) {
     return res.status(403).json({ error: "Unauthorized" });
